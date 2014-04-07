@@ -4,7 +4,7 @@ order_click
 Заказ в один клик
 
 
-
+<pre>
 <?$APPLICATION->IncludeComponent("citfact:citfact.orderclick", ".default", array(
 	"PERSON_TYPE" => "1",
 	"USER_GROUP" => array(
@@ -30,3 +30,4 @@ order_click
 	),
 	false
 );?>
+</pre>
