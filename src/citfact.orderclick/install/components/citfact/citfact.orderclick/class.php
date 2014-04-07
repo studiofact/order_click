@@ -102,85 +102,80 @@ class OrderClick
         }
     }
 
-    public static function UserFieldsInterface($arRequest, $objectUserFilds, $placeholder, $inputClass)
-    {
+    	public static function UserFieldsInterface ($arRequest, $objectUserFilds, $placeholder, $inputClass) {
+		
+		global $APPLICATION;// TO DO
+		
+		
+		
+		$UserFilds = $GLOBALS['USER_FIELD_MANAGER']->GetUserFields($objectUserFilds, 0, LANGUAGE_ID);
+		
+		$offerRequest = (int)$arRequest["OFFER"];
+		$elementRequest = (int)$arRequest["ELEMENT"];
+		$quantityRequest = (int)$arRequest["QUANTITY"];
+		
+		if ($offerRequest && $elementRequest) {
+			$interface["ELEMENT"] = $offerRequest;
+		} elseif (!$offerRequest && $elementRequest) {
+			$interface["ELEMENT"] = $elementRequest;
+		} elseif ($offerRequest && !$elementRequest) {
+			$interface["ELEMENT"] = $offerRequest;
+		} else {
+			$interface["ELEMENT"] = false;
+		}
+		
+		$interface["QUANTITY"] = ($quantityRequest) ? $quantityRequest : 1;
 
-        global $APPLICATION; // TO DO
+		$errorFlag = false;
+		
+		foreach ($UserFilds as $keyUserFilds => $UserFildsValue) {
+			if ($UserFildsValue["MULTIPLE"] == "N") {
+				switch ($UserFildsValue["USER_TYPE"]["USER_TYPE_ID"]) {
+					case "string":
+						if (isset($arRequest[$keyUserFilds])) {
+							$GLOBALS['USER_FIELD_MANAGER']->CheckFields($objectUserFilds, null, $arRequest);
+						}
+						$interface["INTERFACE"][$keyUserFilds]["VALUE"] = $arRequest[$keyUserFilds];
+						$interface["INTERFACE"][$keyUserFilds]["NAME"]= $UserFildsValue["LIST_COLUMN_LABEL"];
+						$interface["INTERFACE"][$keyUserFilds]["MANDATORY"] = $UserFildsValue["MANDATORY"];
+						break;
+				}
+			}
+		}
 
+		$inputClassValue = ($inputClass) ? "class=\"".$inputClass."\"" : "";
+		
+		$errorList = $APPLICATION->GetException();
+		
+		if (is_object($errorList) && $interface["ELEMENT"]) {
+			foreach ($interface["INTERFACE"] as $key => $inputValue) {
+				$placeholderline = ($placeholder == "Y") ? "placeholder=\"".$interface["INTERFACE"][$key]["NAME"]."\"" : "";
+				$interface["INTERFACE"][$key]["OBJECT"] = "<input type=\"text\" ".$placeholderline." ".$inputClassValue." value=\"".$interface["INTERFACE"][$key]["VALUE"]."\" name=\"".$key."\">";
 
-        $UserFilds = $GLOBALS['USER_FIELD_MANAGER']->GetUserFields($objectUserFilds, 0, LANGUAGE_ID);
+			}
+			foreach ($errorList->messages as $errorElement) {
+				$interface["INTERFACE"][$errorElement["id"]]["ERROR"]["MESSAGE"] = $errorElement["text"];
+				
+			}
+			$interface["INTERFACE"]["ELEMENT"]["OBJECT"] = '<input type="hidden" name="ELEMENT" value="'.(int)$arRequest["ELEMENT"].'">';
+			$interface["INTERFACE"]["OFFER"]["OBJECT"] = '<input type="hidden" name="OFFER" value="'.(int)$arRequest["OFFER"].'">';
+			$interface["INTERFACE"]["QUANTITY"]["OBJECT"] = '<input type="hidden" name="QUANTITY" value="'.(int)$arRequest["QUANTITY"].'">';
+			$interface["ERROR"] = true;
+			
+		} else {
+			foreach ($interface["INTERFACE"] as $key => $inputValue) {
+				$placeholderline = ($placeholder == "Y") ? "placeholder=\"".$interface["INTERFACE"][$key]["NAME"]."\"" : "";
+				$interface["INTERFACE"][$key]["OBJECT"] = "<input type=\"text\" ".$placeholderline." ".$inputClassValue." value=\"\" name=\"".$key."\">";
 
-        $offerRequest = (int)$arRequest["OFFER"];
-        $elementRequest = (int)$arRequest["ELEMENT"];
-        $quantityRequest = (int)$arRequest["QUANTITY"];
-
-        if ($offerRequest && $elementRequest) {
-            $interface["ELEMENT"] = $offerRequest;
-        } elseif (!$offerRequest && $elementRequest) {
-            $interface["ELEMENT"] = $elementRequest;
-        } elseif ($offerRequest && !$elementRequest) {
-            $interface["ELEMENT"] = $offerRequest;
-        } else {
-            $interface["ELEMENT"] = false;
-        }
-
-        $interface["QUANTITY"] = ($quantityRequest) ? $quantityRequest : 1;
-
-        $errorFlag = false;
-
-        foreach ($UserFilds as $keyUserFilds => $UserFildsValue) {
-            if ($UserFildsValue["MULTIPLE"] == "N") {
-                switch ($UserFildsValue["USER_TYPE"]["USER_TYPE_ID"]) {
-                    case "string":
-                        if (isset($arRequest[$keyUserFilds])) {
-                            $GLOBALS['USER_FIELD_MANAGER']->CheckFields($objectUserFilds, null, $arRequest);
-                        }
-                        $interface["INTERFACE"][$keyUserFilds]["VALUE"] = $arRequest[$keyUserFilds];
-                        $interface["INTERFACE"][$keyUserFilds]["NAME"] = $UserFildsValue["LIST_COLUMN_LABEL"];
-                        $interface["INTERFACE"][$keyUserFilds]["MANDATORY"] = $UserFildsValue["MANDATORY"];
-                        break;
-                }
-            }
-        }
-
-        $inputClassValue = ($inputClass) ? "class=\"" . $inputClass . "\"" : "";
-
-        if (!$errorFlag && $arRequest && $interface["ELEMENT"]) {
-            foreach ($interface["INTERFACE"] as $key => $inputValue) {
-                $placeholderline = ($placeholder == "Y") ? "placeholder=\"" . $interface["INTERFACE"][$key]["NAME"] . "\"" : "";
-                $interface["INTERFACE"][$key]["OBJECT"] = "<input type=\"text\" " . $placeholderline . " " . $inputClassValue . " value=\"\" name=\"" . $key . "\">";
-            }
-            $interface["ERROR"] = false;
-        } else {
-            foreach ($interface["INTERFACE"] as $key => $inputValue) {
-                $placeholderline = ($placeholder == "Y") ? "placeholder=\"" . $interface["INTERFACE"][$key]["NAME"] . "\"" : "";
-                $interface["INTERFACE"][$key]["OBJECT"] = "<input type=\"text\" " . $placeholderline . " " . $inputClassValue . " value=\"" . $interface["INTERFACE"][$key]["VALUE"] . "\" name=\"" . $key . "\">";
-
-            }
-            $interface["ERROR"] = true;
-        }
-
-        $errorList = $APPLICATION->GetException();
-
-        if (is_object($errorList)) {
-            foreach ($errorList->messages as $errorElement) {
-                $interface["INTERFACE"][$errorElement["id"]]["ERROR"]["MESSAGE"] = $errorElement["text"];
-
-            }
-            $interface["INTERFACE"]["ELEMENT"]["OBJECT"] = '<input type="hidden" name="ELEMENT" value="' . (int)$arRequest["ELEMENT"] . '">';
-            $interface["INTERFACE"]["OFFER"]["OBJECT"] = '<input type="hidden" name="OFFER" value="' . (int)$arRequest["OFFER"] . '">';
-            $interface["INTERFACE"]["QUANTITY"]["OBJECT"] = '<input type="hidden" name="QUANTITY" value="' . (int)$arRequest["QUANTITY"] . '">';
-
-        } else {
-            $interface["INTERFACE"]["ELEMENT"]["OBJECT"] = '<input type="hidden" name="ELEMENT" value="">';
-            $interface["INTERFACE"]["OFFER"]["OBJECT"] = '<input type="hidden" name="OFFER" value="">';
-            $interface["INTERFACE"]["QUANTITY"]["OBJECT"] = '<input type="hidden" name="QUANTITY" value="">';
-        }
-
-
-        return $interface;
-    }
-
+			}
+			$interface["INTERFACE"]["ELEMENT"]["OBJECT"] = '<input type="hidden" name="ELEMENT" value="">';
+			$interface["INTERFACE"]["OFFER"]["OBJECT"] = '<input type="hidden" name="OFFER" value="">';
+			$interface["INTERFACE"]["QUANTITY"]["OBJECT"] = '<input type="hidden" name="QUANTITY" value="">';
+		}
+		
+		
+		return $interface;
+	}
 
 }
 
