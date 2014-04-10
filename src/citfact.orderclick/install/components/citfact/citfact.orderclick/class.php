@@ -171,6 +171,11 @@ class OrderClick
 			$interface["INTERFACE"]["ELEMENT"]["OBJECT"] = '<input type="hidden" name="ELEMENT" value="">';
 			$interface["INTERFACE"]["OFFER"]["OBJECT"] = '<input type="hidden" name="OFFER" value="">';
 			$interface["INTERFACE"]["QUANTITY"]["OBJECT"] = '<input type="hidden" name="QUANTITY" value="">';
+			if ($interface["ELEMENT"]) {
+				$interface["ERROR"] = false;
+			} else {
+				$interface["ERROR"] = true;
+			}
 		}
 		
 		
