@@ -43,8 +43,8 @@
         var idOffer = "<?=$arParams["CONTEYNER_ID_OFFER"]?>";
         var idQuantity = "<?=$arParams["CONTEYNER_ID_QUANTITY"]?>";
         var classButtonOneClick = "<?=$arParams["CLASS_BUTTON_BUY_ONE_CLICK"]?>";
-        var dirScript = "<?=POST_FORM_ACTION_URI;?>";
-        var ajaxId = "comp_<?=$arResult["AJAX_ID"];?>";
+        var dirScript = "<?=POST_FORM_ACTION_URI?>";
+        var ajaxId = "comp_<?=$arResult["AJAX_ID"]?>";
     </script>
 
     <?if ($_REQUEST["orderclickajax"] == "Y") {
