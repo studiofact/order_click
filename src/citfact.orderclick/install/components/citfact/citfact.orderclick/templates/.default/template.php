@@ -12,7 +12,7 @@
         <div id="orderClickView">
             <a href="#" class="closeModalWindow"></a>
 
-            <form id="orderClickForm" method="post">
+            <form id="orderClickForm" method="post" action="<?=POST_FORM_ACTION_URI?>">
                 <?= bitrix_sessid_post() ?>
                 <input type="hidden" name="orderclickajax" value="Y">
                 <?
@@ -43,7 +43,7 @@
         var idOffer = "<?=$arParams["CONTEYNER_ID_OFFER"]?>";
         var idQuantity = "<?=$arParams["CONTEYNER_ID_QUANTITY"]?>";
         var classButtonOneClick = "<?=$arParams["CLASS_BUTTON_BUY_ONE_CLICK"]?>";
-        var dirScript = "<?=$APPLICATION->GetCurDir();?>";
+        var dirScript = "<?=POST_FORM_ACTION_URI;?>";
         var ajaxId = "comp_<?=$arResult["AJAX_ID"];?>";
     </script>
 
