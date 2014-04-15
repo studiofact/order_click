@@ -45,6 +45,7 @@ class OrderClick
                     "GROUP_ID" => $group,
                     "PASSWORD" => $password,
                     "CONFIRM_PASSWORD" => $password,
+                    "PERSONAL_PHONE" => $stringPhone,
                 );
                 return $user->Add($arFields);
             }
