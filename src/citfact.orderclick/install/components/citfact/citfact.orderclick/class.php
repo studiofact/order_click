@@ -34,11 +34,12 @@ class OrderClick
             if ($arUser = $usersCheck->Fetch()) {
                 return (int)$arUser["ID"];
             } else {
+            	$stringPhone = preg_replace('~\D~','',$phone);
                 $password = OrderClick::GeneratePassword(10);
                 $user = new CUser;
                 $arFields = Array(
                     "NAME" => $name,
-                    "EMAIL" => $phone . "@" . $domen,
+                    "EMAIL" => $stringPhone . "@" . $domen,
                     "LOGIN" => $phone,
                     "ACTIVE" => "N", // Делаю пользователя не активным
                     "GROUP_ID" => $group,
