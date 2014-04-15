@@ -53,56 +53,90 @@ class OrderClick
 
     }
 
-    public static function AddProduct($idProduct, $quantity, $arRewriteFields, $arProductParams, $userId, $currency, $personType, $clearCart)
-    {
-        if (CModule::IncludeModule("catalog")) {
+    public static function AddProduct ($idProduct, $quantity, $arRewriteFields, $arProductParams, $userId, $currency, $personType, $clearCart) {
+		if (CModule::IncludeModule("catalog")) {
+			
+			global $DB;
+			global $USER;
+				
+			if ($clearCart == "Y" && (int)$idProduct > 0) {
+				CSaleBasket::DeleteAll(CSaleBasket::GetBasketUserID());
+			}
+			
+			if (Add2BasketByProductID( $idProduct, $quantity, $arRewriteFields, $arProductParams)) { // В корзину
+			
+				// Получаю параметры корзины
+				$dbBasketItems = CSaleBasket::GetList(array("NAME" => "ASC", "ID" => "ASC"), array("FUSER_ID" => CSaleBasket::GetBasketUserID(), "ORDER_ID" => "NULL"), false, false, array("ID", "PRODUCT_ID", "QUANTITY", "DELAY", "CAN_BUY", "PRICE", "NAME"));
+				while ($arItems = $dbBasketItems->Fetch())	{
+						$arBasketItems[] = $arItems;
+				}
+				
+				foreach ($arBasketItems as $valBasketItems) {
+					$productPriceSumm = $productPriceSumm + ((int)$valBasketItems["QUANTITY"]*(int)$valBasketItems["PRICE"]);
+				}
+				
+				
+				$strOrderList = "";
 
-            if ($clearCart == "Y") {
-                CSaleBasket::DeleteAll(CSaleBasket::GetBasketUserID());
-            }
+				foreach ($arBasketItems as $arItem)
+				{
+					$measureText = (isset($arItem["MEASURE_TEXT"]) && strlen($arItem["MEASURE_TEXT"])) ? $arItem["MEASURE_TEXT"] : GetMessage("SOA_SHT");
 
-            if (Add2BasketByProductID($idProduct, $quantity, $arRewriteFields, $arProductParams)) { // В корзину
+					$strOrderList .= $arItem["NAME"]." - ".$arItem["QUANTITY"]." ".$measureText.": ".SaleFormatCurrency($arItem["PRICE"], $arItem["CURRENCY"]);
+					$strOrderList .= "\n";
+				}
+				
+				
+				// Создаю заказ
+				$arOrderFields = array(
+					"LID" => SITE_ID,
+					"PERSON_TYPE_ID" => $personType,
+					"PAYED" => "N",
+					"CANCELED" => "N",
+					"STATUS_ID" => "N",
+					"PRICE" => $productPriceSumm,
+					"CURRENCY" => $currency,
+					"USER_ID" => $userId,
+					"USER_DESCRIPTION" => "",
+					"ADDITIONAL_INFO" => ""
+				);
+				
+				$ORDER_ID = CSaleOrder::Add($arOrderFields);
+				
+				// Привязываем товары из корзины текущего пользователя к заказу			
+				
+				CSaleBasket::OrderBasket($ORDER_ID, CSaleBasket::GetBasketUserID(), SITE_ID, false);
 
-                // Получаю параметры корзины
-                $dbBasketItems = CSaleBasket::GetList(array("NAME" => "ASC", "ID" => "ASC"), array("FUSER_ID" => CSaleBasket::GetBasketUserID(), "ORDER_ID" => "NULL"), false, false, array("ID", "PRODUCT_ID", "QUANTITY", "DELAY", "CAN_BUY", "PRICE"));
-                while ($arItems = $dbBasketItems->Fetch()) {
-                    $arBasketItems[] = $arItems;
-                }
+				$rsUser = CUser::GetByID($userId);
+				$arUser = $rsUser->Fetch();
+				
+				$arFields = Array(
+					"ORDER_ID" => $ORDER_ID,
+					"ORDER_DATE" => Date($DB->DateFormatToPHP(CLang::GetDateFormat("SHORT", SITE_ID))),
+					"ORDER_USER" => $arUser["NAME"],
+					"PRICE" => $productPriceSumm,
+					"BCC" => COption::GetOptionString("sale", "order_email", "order@".$SERVER_NAME),
+					"EMAIL" => (strlen($arUserResult["USER_EMAIL"])>0 ? $arUserResult["USER_EMAIL"] : $USER->GetEmail()),
+					"ORDER_LIST" => $strOrderList,
+					"SALE_EMAIL" => COption::GetOptionString("sale", "order_email", "order@".$SERVER_NAME),
+						
+				);
 
-                foreach ($arBasketItems as $valBasketItems) {
-                    $productPriceSumm = $productPriceSumm + ((int)$valBasketItems["QUANTITY"] * (int)$valBasketItems["PRICE"]);
-                }
+				$eventName = "SALE_NEW_ORDER";
 
+					$event = new CEvent;
+					$event->Send($eventName, SITE_ID, $arFields, "N");
+					
+				
+				return $ORDER_ID;
+				
+			}
 
-                // Создаю заказ
-                $arOrderFields = array(
-                    "LID" => SITE_ID,
-                    "PERSON_TYPE_ID" => $personType,
-                    "PAYED" => "N",
-                    "CANCELED" => "N",
-                    "STATUS_ID" => "N",
-                    "PRICE" => $productPriceSumm,
-                    "CURRENCY" => $currency,
-                    "USER_ID" => $userId,
-                    "USER_DESCRIPTION" => "",
-                    "ADDITIONAL_INFO" => ""
-                );
-
-                $ORDER_ID = CSaleOrder::Add($arOrderFields);
-
-                // Привязываем товары из корзины текущего пользователя к заказу
-
-                CSaleBasket::OrderBasket($ORDER_ID, CSaleBasket::GetBasketUserID(), SITE_ID, false);
-
-                return CSaleBasket::GetBasketUserID();
-
-            }
-
-
-        } else {
-            return false;
-        }
-    }
+			
+		} else {
+			return false;
+		}
+	}
 
     	public static function UserFieldsInterface ($arRequest, $objectUserFilds, $placeholder, $inputClass) {
 		
